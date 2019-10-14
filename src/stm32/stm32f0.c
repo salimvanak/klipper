@@ -101,7 +101,7 @@ clock_setup(void)
     if (CONFIG_CLOCK_REF_8M) {
         // Configure 48Mhz PLL from external 8Mhz crystal (HSE)
         RCC->CR |= RCC_CR_HSEON;
-        cfgr = (1 << RCC_CFGR_PLLSRC_Pos) | ((6 - 2) << RCC_CFGR_PLLMUL_Pos);
+        cfgr = RCC_CFGR_PLLSRC_HSE_PREDIV | ((6 - 2) << RCC_CFGR_PLLMUL_Pos);
         RCC->CFGR = cfgr;
         RCC->CR |= RCC_CR_PLLON;
 
@@ -115,13 +115,15 @@ clock_setup(void)
             ;
     } else if (CONFIG_MACH_STM32F042) {
         // Use HSI48 on the STM32F042
+#if CONFIG_MACH_STM32F042
         RCC->CR2 |= RCC_CR2_HSI48ON;
         while (!(RCC->CR2 & RCC_CR2_HSI48RDY))
             ;
         RCC->CFGR = RCC_CFGR_SW_HSI48;
+#endif
     } else {
         // Configure 48Mhz PLL from internal 8Mhz oscillator (HSI)
-        cfgr = (0 << RCC_CFGR_PLLSRC_Pos) | ((12 - 2) << RCC_CFGR_PLLMUL_Pos);
+        cfgr = (12 - 2) << RCC_CFGR_PLLMUL_Pos;
         RCC->CFGR = cfgr;
         RCC->CR |= RCC_CR_PLLON;
 
@@ -136,10 +138,12 @@ clock_setup(void)
     }
 
     // Enable USB pins on 20 pin stm32f042
+#if CONFIG_MACH_STM32F042
     if (CONFIG_STM32F042_USB_PIN_SWAP) {
         enable_pclock(SYSCFG_BASE);
         SYSCFG->CFGR1 |= SYSCFG_CFGR1_PA11_PA12_RMP;
     }
+#endif
 
     // Enable USB clock
     if (CONFIG_USBSERIAL && CONFIG_CLOCK_REF_8M)
